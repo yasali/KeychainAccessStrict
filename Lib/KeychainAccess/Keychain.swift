@@ -206,7 +206,8 @@ extension AuthenticationUI {
     }
 }
 
-public struct AuthenticationPolicy: OptionSet {
+
+public struct AuthenticationPolicy: OptionSet, Sendable {
     /**
      User presence policy using Touch ID or Passcode. Touch ID does not
      have to be available or enrolled. Item is still accessible by Touch ID
@@ -705,6 +706,7 @@ public final class Keychain {
 
             options.attributes.forEach { attributes.updateValue($1, forKey: $0) }
 
+            /*
             #if os(iOS)
             if status == errSecInteractionNotAllowed && floor(NSFoundationVersionNumber) <= floor(NSFoundationVersionNumber_iOS_8_0) {
                 try remove(key)
@@ -716,11 +718,13 @@ public final class Keychain {
                 }
             }
             #else
+            
             status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
             if status != errSecSuccess {
                 throw securityError(status: status)
             }
             #endif
+             */
         case errSecItemNotFound:
             var (attributes, error) = options.attributes(key: key, value: value)
             if let error = error {
@@ -1250,12 +1254,12 @@ private let AttributeAuthenticationType = String(kSecAttrAuthenticationType)
 private let AttributePort = String(kSecAttrPort)
 private let AttributePath = String(kSecAttrPath)
 
-private let SynchronizableAny = kSecAttrSynchronizableAny
+nonisolated(unsafe) private let SynchronizableAny = kSecAttrSynchronizableAny
 
 /** Search Constants */
 private let MatchLimit = String(kSecMatchLimit)
-private let MatchLimitOne = kSecMatchLimitOne
-private let MatchLimitAll = kSecMatchLimitAll
+nonisolated(unsafe) private let MatchLimitOne = kSecMatchLimitOne
+nonisolated(unsafe) private let MatchLimitAll = kSecMatchLimitAll
 
 /** Return Type Key Constants */
 private let ReturnData = String(kSecReturnData)
