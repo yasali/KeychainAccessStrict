@@ -692,7 +692,7 @@ public final class Keychain {
         }
         #endif
 
-        var status = SecItemCopyMatching(query as CFDictionary, nil)
+        let status = SecItemCopyMatching(query as CFDictionary, nil)
         switch status {
         case errSecSuccess, errSecInteractionNotAllowed:
             var query = options.query()
@@ -704,27 +704,23 @@ public final class Keychain {
                 throw error
             }
 
-            options.attributes.forEach { attributes.updateValue($1, forKey: $0) }
-
-            /*
+            options.attributes.forEach { attributes.updateValue($1, forKey: $0) }            
             #if os(iOS)
-            if status == errSecInteractionNotAllowed && floor(NSFoundationVersionNumber) <= floor(NSFoundationVersionNumber_iOS_8_0) {
+            let systemVersion = ProcessInfo.processInfo.operatingSystemVersion
+            if status == errSecInteractionNotAllowed && (systemVersion.majorVersion < 9 || (systemVersion.majorVersion == 8 && systemVersion.minorVersion == 0) ) {
                 try remove(key)
                 try set(value, key: key)
             } else {
-                status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
-                if status != errSecSuccess {
+                if SecItemUpdate(query as CFDictionary, attributes as CFDictionary) != errSecSuccess {
                     throw securityError(status: status)
                 }
             }
             #else
             
-            status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
-            if status != errSecSuccess {
+            if SecItemUpdate(query as CFDictionary, attributes as CFDictionary) != errSecSuccess {
                 throw securityError(status: status)
             }
             #endif
-             */
         case errSecItemNotFound:
             var (attributes, error) = options.attributes(key: key, value: value)
             if let error = error {
@@ -734,8 +730,7 @@ public final class Keychain {
 
             options.attributes.forEach { attributes.updateValue($1, forKey: $0) }
 
-            status = SecItemAdd(attributes as CFDictionary, nil)
-            if status != errSecSuccess {
+            if SecItemAdd(attributes as CFDictionary, nil) != errSecSuccess {
                 throw securityError(status: status)
             }
         default:
