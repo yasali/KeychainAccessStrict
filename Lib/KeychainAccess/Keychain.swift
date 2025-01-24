@@ -31,12 +31,12 @@ import LocalAuthentication
 
 public let KeychainAccessErrorDomain = "com.kishikawakatsumi.KeychainAccess.error"
 
-public enum ItemClass {
+public enum ItemClass: Sendable {
     case genericPassword
     case internetPassword
 }
 
-public enum ProtocolType {
+public enum ProtocolType: Sendable {
     case ftp
     case ftpAccount
     case http
@@ -70,7 +70,7 @@ public enum ProtocolType {
     case pop3S
 }
 
-public enum AuthenticationType {
+public enum AuthenticationType: Sendable {
     case ntlm
     case msn
     case dpa
@@ -81,7 +81,7 @@ public enum AuthenticationType {
     case `default`
 }
 
-public enum Accessibility {
+public enum Accessibility: Sendable {
     /**
      Item data can only be accessed
      while the device is unlocked. This is recommended for items that only
@@ -160,7 +160,7 @@ public enum Accessibility {
  If the key kSecUseAuthenticationUI not provided then kSecUseAuthenticationUIAllow
  is used as default.
  */
-public enum AuthenticationUI {
+public enum AuthenticationUI: Sendable{
     /**
      Specifies that authenticate UI can appear.
      */
@@ -407,7 +407,7 @@ public struct Attributes {
     }
 }
 
-public final class Keychain {
+public final class Keychain: Sendable {
     public var itemClass: ItemClass {
         return options.itemClass
     }
@@ -423,11 +423,11 @@ public final class Keychain {
     }
 
     public var server: URL {
-        return options.server
+        return options.server!  // TODO: Remove force unwrapping
     }
 
     public var protocolType: ProtocolType {
-        return options.protocolType
+        return options.protocolType! // TODO: Remove force unwrapping
     }
 
     public var authenticationType: AuthenticationType {
@@ -479,27 +479,15 @@ public final class Keychain {
     // MARK:
 
     public convenience init() {
-        var options = Options()
-        if let bundleIdentifier = Bundle.main.bundleIdentifier {
-            options.service = bundleIdentifier
-        }
-        self.init(options)
+        self.init(Options(service: Bundle.main.bundleIdentifier ?? ""))
     }
 
     public convenience init(accessGroup: String) {
-        var options = Options()
-        if let bundleIdentifier = Bundle.main.bundleIdentifier {
-            options.service = bundleIdentifier
-        }
-        options.accessGroup = accessGroup
-        self.init(options)
+        self.init(Options(service: Bundle.main.bundleIdentifier ?? "", accessGroup: accessGroup))
     }
 
     public convenience init(service: String, accessGroup: String? = nil) {
-        var options = Options()
-        options.service = service
-        options.accessGroup = accessGroup
-        self.init(options)
+        self.init(Options(service: service, accessGroup: accessGroup))
     }
 
     public convenience init(server: String, protocolType: ProtocolType, accessGroup: String? = nil, authenticationType: AuthenticationType = .default) {
@@ -507,13 +495,15 @@ public final class Keychain {
     }
 
     public convenience init(server: URL, protocolType: ProtocolType, accessGroup: String? = nil, authenticationType: AuthenticationType = .default) {
-        var options = Options()
-        options.itemClass = .internetPassword
-        options.server = server
-        options.protocolType = protocolType
-        options.accessGroup = accessGroup
-        options.authenticationType = authenticationType
-        self.init(options)
+        self.init(
+          Options(
+            itemClass: .internetPassword,
+            accessGroup: accessGroup,
+            server: server,
+            protocolType: protocolType,
+            authenticationType: authenticationType
+          )
+        )
     }
 
     fileprivate init(_ opts: Options) {
@@ -523,65 +513,48 @@ public final class Keychain {
     // MARK:
 
     public func accessibility(_ accessibility: Accessibility) -> Keychain {
-        var options = self.options
-        options.accessibility = accessibility
-        return Keychain(options)
+        return Keychain(self.options.withAccessibility(accessibility))
     }
 
     @available(iOS 8.0, macOS 10.10, *)
     @available(watchOS, unavailable)
     public func accessibility(_ accessibility: Accessibility, authenticationPolicy: AuthenticationPolicy) -> Keychain {
-        var options = self.options
-        options.accessibility = accessibility
-        options.authenticationPolicy = authenticationPolicy
-        return Keychain(options)
+        return Keychain(
+            options.withAccessibilityAndAuthenticationPolicy(accessibility, authenticationPolicy: authenticationPolicy)
+        )
     }
 
     public func synchronizable(_ synchronizable: Bool) -> Keychain {
-        var options = self.options
-        options.synchronizable = synchronizable
-        return Keychain(options)
+        return Keychain(options.withSynchronizable(synchronizable))
     }
 
     public func label(_ label: String) -> Keychain {
-        var options = self.options
-        options.label = label
-        return Keychain(options)
+        return Keychain(options.withLabel(label))
     }
 
     public func comment(_ comment: String) -> Keychain {
-        var options = self.options
-        options.comment = comment
-        return Keychain(options)
+        return Keychain(options.withComment(comment))
     }
 
     public func attributes(_ attributes: [String: Any]) -> Keychain {
-        var options = self.options
-        attributes.forEach { options.attributes.updateValue($1, forKey: $0) }
-        return Keychain(options)
+        return Keychain(options.withAttributes(attributes))
     }
 
     @available(iOS 8.0, macOS 10.10, *)
     @available(watchOS, unavailable)
     public func authenticationPrompt(_ authenticationPrompt: String) -> Keychain {
-        var options = self.options
-        options.authenticationPrompt = authenticationPrompt
-        return Keychain(options)
+      return Keychain(options.withAuthenticationPrompt(authenticationPrompt))
     }
 
     @available(iOS 9.0, macOS 10.11, *)
     public func authenticationUI(_ authenticationUI: AuthenticationUI) -> Keychain {
-        var options = self.options
-        options.authenticationUI = authenticationUI
-        return Keychain(options)
+        return Keychain(options.withAuthenticationUI(authenticationUI))
     }
 
     #if os(iOS) || os(macOS)
     @available(iOS 9.0, macOS 10.11, *)
     public func authenticationContext(_ authenticationContext: LAContext) -> Keychain {
-        var options = self.options
-        options.authenticationContext = authenticationContext
-        return Keychain(options)
+        return Keychain(options.withAuthenticationContext(authenticationContext))
     }
     #endif
 
@@ -1194,29 +1167,222 @@ public final class Keychain {
     }
 }
 
-struct Options {
-    var itemClass: ItemClass = .genericPassword
+struct Options: Sendable {
+  
+    let itemClass: ItemClass
 
-    var service: String = ""
-    var accessGroup: String? = nil
+    let service: String
+    let accessGroup: String?
 
-    var server: URL!
-    var protocolType: ProtocolType!
-    var authenticationType: AuthenticationType = .default
+    let server: URL?
+    let protocolType: ProtocolType?
+    let authenticationType: AuthenticationType
 
-    var accessibility: Accessibility = .afterFirstUnlock
-    var authenticationPolicy: AuthenticationPolicy?
+    let accessibility: Accessibility
+    let authenticationPolicy: AuthenticationPolicy?
 
-    var synchronizable: Bool = false
+    let synchronizable: Bool
 
-    var label: String?
-    var comment: String?
+    let label: String?
+    let comment: String?
 
-    var authenticationPrompt: String?
-    var authenticationUI: AuthenticationUI?
-    var authenticationContext: AnyObject?
+    let authenticationPrompt: String?
+    let authenticationUI: AuthenticationUI?
+    nonisolated(unsafe) let authenticationContext: AnyObject?
 
-    var attributes = [String: Any]()
+    nonisolated(unsafe) let attributes: [String: Any]
+    
+  init(itemClass: ItemClass = .genericPassword, service: String = "", accessGroup: String? = nil, server: URL? = nil, protocolType: ProtocolType? = nil, authenticationType: AuthenticationType = .default, accessibility: Accessibility = .afterFirstUnlock, authenticationPolicy: AuthenticationPolicy? = nil, synchronizable: Bool = false, label: String? = nil, comment: String? = nil, authenticationPrompt: String? = nil, authenticationUI: AuthenticationUI? = nil, authenticationContext: AnyObject? = nil, attributes: [String : Any] = [:]) {
+    self.itemClass = itemClass
+    self.service = service
+    self.accessGroup = accessGroup
+    self.server = server
+    self.protocolType = protocolType
+    self.authenticationType = authenticationType
+    self.accessibility = accessibility
+    self.authenticationPolicy = authenticationPolicy
+    self.synchronizable = synchronizable
+    self.label = label
+    self.comment = comment
+    self.authenticationPrompt = authenticationPrompt
+    self.authenticationUI = authenticationUI
+    self.authenticationContext = authenticationContext
+    self.attributes = attributes
+  }
+  
+  func withAccessibility(_ accessibility: Accessibility) -> Options {
+      Options(
+          itemClass: self.itemClass,
+          service: self.service,
+          server: self.server,
+          protocolType: self.protocolType,
+          authenticationType: self.authenticationType,
+          accessibility: accessibility,
+          authenticationPolicy: self.authenticationPolicy,
+          synchronizable: self.synchronizable,
+          label: self.label,
+          comment: self.comment,
+          authenticationPrompt: self.authenticationPrompt,
+          authenticationUI: self.authenticationUI,
+          authenticationContext: self.authenticationContext,
+          attributes: self.attributes
+      )
+  }
+  
+  func withAccessibilityAndAuthenticationPolicy(_ accessibility: Accessibility, authenticationPolicy: AuthenticationPolicy) -> Options {
+      Options(
+          itemClass: self.itemClass,
+          service: self.service,
+          server: self.server,
+          protocolType: self.protocolType,
+          authenticationType: self.authenticationType,
+          accessibility: accessibility,
+          authenticationPolicy: authenticationPolicy,
+          synchronizable: self.synchronizable,
+          label: self.label,
+          comment: self.comment,
+          authenticationPrompt: self.authenticationPrompt,
+          authenticationUI: self.authenticationUI,
+          authenticationContext: self.authenticationContext,
+          attributes: self.attributes
+      )
+  }
+  
+  func withSynchronizable(_ synchronizable: Bool) -> Options {
+      Options(
+          itemClass: self.itemClass,
+          service: self.service,
+          server: self.server,
+          protocolType: self.protocolType,
+          authenticationType: self.authenticationType,
+          accessibility: self.accessibility,
+          authenticationPolicy: self.authenticationPolicy,
+          synchronizable: synchronizable,
+          label: self.label,
+          comment: self.comment,
+          authenticationPrompt: self.authenticationPrompt,
+          authenticationUI: self.authenticationUI,
+          authenticationContext: self.authenticationContext,
+          attributes: self.attributes
+      )
+  }
+  
+  func withLabel(_ label: String) -> Options {
+      Options(
+          itemClass: self.itemClass,
+          service: self.service,
+          server: self.server,
+          protocolType: self.protocolType,
+          authenticationType: self.authenticationType,
+          accessibility: self.accessibility,
+          authenticationPolicy: self.authenticationPolicy,
+          synchronizable: self.synchronizable,
+          label: label,
+          comment: self.comment,
+          authenticationPrompt: self.authenticationPrompt,
+          authenticationUI: self.authenticationUI,
+          authenticationContext: self.authenticationContext,
+          attributes: self.attributes
+      )
+  }
+  
+  func withComment(_ comment: String) -> Options {
+      Options(
+          itemClass: self.itemClass,
+          service: self.service,
+          server: self.server,
+          protocolType: self.protocolType,
+          authenticationType: self.authenticationType,
+          accessibility: self.accessibility,
+          authenticationPolicy: self.authenticationPolicy,
+          synchronizable: self.synchronizable,
+          label: self.label,
+          comment: comment,
+          authenticationPrompt: self.authenticationPrompt,
+          authenticationUI: self.authenticationUI,
+          authenticationContext: self.authenticationContext,
+          attributes: self.attributes
+      )
+  }
+  
+  func withAttributes(_ attributes: [String: Any]) -> Options {
+      var currentAttributes = self.attributes
+      attributes.forEach { currentAttributes.updateValue($1, forKey: $0) }
+      
+      return Options(
+          itemClass: self.itemClass,
+          service: self.service,
+          server: self.server,
+          protocolType: self.protocolType,
+          authenticationType: self.authenticationType,
+          accessibility: self.accessibility,
+          authenticationPolicy: self.authenticationPolicy,
+          synchronizable: self.synchronizable,
+          label: self.label,
+          comment: comment,
+          authenticationPrompt: self.authenticationPrompt,
+          authenticationUI: self.authenticationUI,
+          authenticationContext: self.authenticationContext,
+          attributes: currentAttributes
+      )
+  }
+  
+  func withAuthenticationPrompt(_ authenticationPrompt: String) -> Options {
+      Options(
+          itemClass: self.itemClass,
+          service: self.service,
+          server: self.server,
+          protocolType: self.protocolType,
+          authenticationType: self.authenticationType,
+          accessibility: self.accessibility,
+          authenticationPolicy: self.authenticationPolicy,
+          synchronizable: self.synchronizable,
+          label: self.label,
+          comment: self.comment,
+          authenticationPrompt: authenticationPrompt,
+          authenticationUI: self.authenticationUI,
+          authenticationContext: self.authenticationContext,
+          attributes: self.attributes
+      )
+  }
+  
+  func withAuthenticationUI(_ authenticationUI: AuthenticationUI) -> Options {
+      Options(
+          itemClass: self.itemClass,
+          service: self.service,
+          server: self.server,
+          protocolType: self.protocolType,
+          authenticationType: self.authenticationType,
+          accessibility: self.accessibility,
+          authenticationPolicy: self.authenticationPolicy,
+          synchronizable: self.synchronizable,
+          label: self.label,
+          comment: self.comment,
+          authenticationPrompt: self.authenticationPrompt,
+          authenticationUI: authenticationUI,
+          authenticationContext: self.authenticationContext,
+          attributes: self.attributes
+      )
+  }
+  
+  func withAuthenticationContext(_ authenticationContext: LAContext) -> Options {
+      Options(
+          itemClass: self.itemClass,
+          service: self.service,
+          server: self.server,
+          protocolType: self.protocolType,
+          authenticationType: self.authenticationType,
+          accessibility: self.accessibility,
+          authenticationPolicy: self.authenticationPolicy,
+          synchronizable: self.synchronizable,
+          label: self.label,
+          comment: self.comment,
+          authenticationPrompt: self.authenticationPrompt,
+          authenticationUI: self.authenticationUI,
+          authenticationContext: authenticationContext,
+          attributes: self.attributes
+      )
+  }
 }
 
 /** Class Key Constant */
@@ -1335,9 +1501,9 @@ extension Options {
         case .genericPassword:
             query[AttributeService] = service
         case .internetPassword:
-            query[AttributeServer] = server.host
-            query[AttributePort] = server.port
-            query[AttributeProtocol] = protocolType.rawValue
+            query[AttributeServer] = server?.host // TODO:
+            query[AttributePort] = server?.port // TODO:
+            query[AttributeProtocol] = protocolType?.rawValue // TODO:
             query[AttributeAuthenticationType] = authenticationType.rawValue
         }
 
