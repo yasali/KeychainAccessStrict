@@ -1,15 +1,26 @@
-# KeychainAccess
+# KeychainAccessStrict
 
-[![Build Status](https://travis-ci.com/kishikawakatsumi/KeychainAccess.svg?branch=master)](https://travis-ci.com/kishikawakatsumi/KeychainAccess)
-[![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
-[![SPM supported](https://img.shields.io/badge/SPM-supported-DE5C43.svg?style=flat)](https://swift.org/package-manager)
-[![Version](https://img.shields.io/cocoapods/v/KeychainAccess.svg)](http://cocoadocs.org/docsets/KeychainAccess)
-[![Platform](https://img.shields.io/cocoapods/p/KeychainAccess.svg)](http://cocoadocs.org/docsets/KeychainAccess)
+**KeychainAccessStrict** is a modern, Swift 6-compatible fork of the popular [KeychainAccess](https://github.com/kishikawakatsumi/KeychainAccess) library. It is designed to provide a fully thread-safe and concurrency-compliant interface for securely managing sensitive information on iOS, macOS, watchOS, and tvOS.
 
-KeychainAccess is a simple Swift wrapper for Keychain that works on iOS and macOS. Makes using Keychain APIs extremely easy and much more palatable to use in Swift.
+## Key Features
+- **Swift 6 Compatibility**: Fully adapted to Swift 6, ensuring seamless integration with the latest concurrency features such as `async/await`.
+- **Thread-Safe Implementation**: Enhanced safety for concurrent access, eliminating potential race conditions in highly concurrent environments.
+- **Secure Data Management**: Handles encryption and secure storage of sensitive information, leveraging the system's Keychain API.
+- **Customizable Options**: Supports accessibility levels, iCloud Keychain synchronization, and granular access control.
+- **Password Autofill Integration**: Easily integrates with the system's password autofill feature for user convenience.
 
-<img src="https://github.com/kishikawakatsumi/KeychainAccess/assets/40610/4de4aae1-6fc1-4477-af6d-afbe6d164da0" width="320px" /> <img src="https://github.com/kishikawakatsumi/KeychainAccess/assets/40610/2980ea84-862b-4067-b9b7-90de629171b9" width="320px" />
-<img src="https://github.com/kishikawakatsumi/KeychainAccess/assets/40610/3299347d-eb1b-446c-921c-778fa493f818" width="320px" />
+## Why Choose KeychainAccessStrict?
+KeychainAccessStrict builds upon the solid foundation of the original KeychainAccess library while addressing modern concurrency requirements and thread-safety guarantees. It provides a more robust solution for projects targeting Swift 6 and beyond, ensuring that your application meets current development standards.
+
+## Installation
+KeychainAccessStrict supports installation via [Swift Package Manager](https://swift.org/package-manager/) for easy integration. See the repository's README for detailed setup instructions.
+
+## Contribution
+Contributions are welcome! If you have ideas for further improvements or find any issues, feel free to open an issue or submit a pull request.
+
+---
+
+**Repository**: [GitHub - KeychainAccessStrict](https://github.com/yasali/KeychainAccessStrict)
 
 ## :bulb: Features
 
