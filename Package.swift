@@ -1,25 +1,17 @@
-// swift-tools-version:5.0
-
-//  Package.swift
-//  KeychainAccess
-//
-//  Created by kishikawa katsumi on 2015/12/4.
-//  Copyright (c) 2015 kishikawa katsumi. All rights reserved.
-//
-
+// swift-tools-version:6.0
 import PackageDescription
 
 let package = Package(
-    name: "KeychainAccess",
+    name: "KeychainAccessStrict",
     platforms: [
         .macOS(.v10_10), .iOS(.v8), .tvOS(.v9), .watchOS(.v2)
     ],
     products: [
-        .library(name: "KeychainAccess", targets: ["KeychainAccess"])
+        .library(name: "KeychainAccessStrict", targets: ["KeychainAccessStrict"])
     ],
     targets: [
         .target(
-          name: "KeychainAccess",
+          name: "KeychainAccessStrict",
           path: "Lib/KeychainAccess",
           linkerSettings: [.unsafeFlags(["-Xlinker", "-no_application_extension"])])
     ]
